@@ -747,7 +747,7 @@
         </v-col>
         <v-col cols="5">
           <v-row no-gutters class="pa-1 pt-2 pl-0">
-            <v-col cols="6" class="pa-1">
+            <!-- <v-col cols="6" class="pa-1">
               <v-btn
                 block
                 class="pa-0"
@@ -756,7 +756,7 @@
                 @click="get_draft_invoices"
                 >{{ __("Held") }}</v-btn
               >
-            </v-col>
+            </v-col> -->
             <v-col cols="6" class="pa-1">
               <v-btn
                 block

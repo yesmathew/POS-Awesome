@@ -464,7 +464,7 @@
                       :label="frappe._('Serial No QTY')"
                       background-color="white"
                       hide-details
-                      v-model="item.serial_no_selected_count"
+                      v-model="item.serial_no_selected.length"
                       type="number"
                       disabled
                     ></v-text-field>
@@ -964,6 +964,19 @@ export default {
             new_item.batch_no = r.batch_no
             vm.set_batch_qty(new_item, new_item.batch_no, false);
           })
+          if ( new_item.batch_no &&  new_item.batch_no!=""){  
+                frappe.db.get_list('Serial No', {
+                  fields: [ 'serial_no'],
+                  filters: {
+                    status: 'Active',
+                    batch_no: new_item.batch_no
+                  }
+                }).then(records => {
+                  new_item.serial_no_data=records
+                })
+
+
+              }
           // End
           this.set_serial_no(new_item);
           item.to_set_serial_no = null;
@@ -1004,6 +1017,7 @@ export default {
           ) {
             cur_item.qty += item.qty || 1;
             this.calc_stock_qty(cur_item, cur_item.qty);
+            this.expanded(this.item)
           } else {
             const new_item = this.get_new_item(cur_item);
             new_item.batch_no = item.batch_no || item.to_set_batch_no;

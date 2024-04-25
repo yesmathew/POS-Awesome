@@ -516,7 +516,7 @@ export default {
                     break;
                   }
                 }
-                if (found && this.search) {
+                if (this.search) {
                   frappe.db
                     .get_value("Serial No", this.search, "batch_no")
                     .then((r) => {

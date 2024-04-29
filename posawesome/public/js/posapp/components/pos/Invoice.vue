@@ -203,7 +203,7 @@
                     </v-btn>
                   </v-col>
                   <v-spacer></v-spacer>
-                  <v-col cols="1">
+                  <!-- <v-col cols="1">
                     <v-btn
                       :disabled="!!item.posa_is_offer || !!item.posa_is_replace"
                       icon
@@ -222,7 +222,7 @@
                     >
                       <v-icon>mdi-plus-circle-outline</v-icon>
                     </v-btn>
-                  </v-col>
+                  </v-col> -->
                 </v-row>
                 <v-row class="ma-0 pa-0">
                   <v-col cols="4">

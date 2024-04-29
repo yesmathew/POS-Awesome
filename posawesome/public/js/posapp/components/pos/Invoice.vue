@@ -517,13 +517,30 @@
                       disabled
                     ></v-text-field>
                   </v-col>
+                  
                   <v-col
                     cols="8"
                     v-if="item.has_batch_no == 1 || item.batch_no"
                   >
+
+                  <v-text-field
+                        dense
+                        outlined
+                        color="primary"
+                        :label="frappe._('Batch No')"
+                        background-color="white"
+                        hide-details
+                        v-model="item.batch_no"
+                        type="text"
+                        disabled
+                      ></v-text-field>
+                    </v-col>
+
+
                   <!-- Customization
                   Start  -->
-                    <v-autocomplete
+
+                    <!-- <v-autocomplete
                       v-model="item.batch_no"
                       :items="item.batch_no_data"
                       item-text="batch_no"
@@ -534,7 +551,7 @@
                       :label="frappe._('Batch No')"
                       @change="set_batch_qty(item, $event)"
                     >
-                    <!-- End -->
+               
                       <template v-slot:item="data">
                         <template>
                           <v-list-item-content>
@@ -550,7 +567,11 @@
                         </template>
                       </template>
                     </v-autocomplete>
-                  </v-col>
+
+
+
+                    
+                  </v-col> -->
                   <v-col
                     cols="4"
                     v-if="

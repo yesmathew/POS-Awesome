@@ -21,7 +21,7 @@
             <v-row dense class="overflow-y-auto" style="max-height: 67vh">
               <v-col v-for="(item, idx) in filtred_items" :key="idx" xl="2" lg="3" md="6" sm="6" cols="6"
                 min-height="50">
-                <v-card hover="hover" @click="add_item(item)">
+                <v-card hover="hover">
                   <v-img :src="item.image ||
                     '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
                     " class="white--text align-end" gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)"
@@ -46,7 +46,7 @@
             <div class="my-0 py-0 overflow-y-auto" style="max-height: 65vh">
               <template>
                 <v-data-table :headers="getItmesHeaders()" :items="filtred_items" item-key="item_code"
-                  class="elevation-1" :items-per-page="itemsPerPage" hide-default-footer @click:row="add_item">
+                  class="elevation-1" :items-per-page="itemsPerPage" hide-default-footer>
                   <template v-slot:item.rate="{ item }">
                     <span class="primary--text">{{ currencySymbol(item.currency) }}
                       {{ formtCurrency(item.rate) }}</span>

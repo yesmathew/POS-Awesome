@@ -1132,7 +1132,7 @@ export default {
 
     new_invoice(data = {}) {
       let old_invoice = null;
-      if (!data.is_load_invoice)
+      if (!data.is_load_invoice && !data.is_return)
       {
       if (!this.validate()) {
         return;
@@ -1883,7 +1883,7 @@ export default {
           item.batch_price = batch_to_use.batch_price;
           item.price_list_rate = batch_to_use.batch_price;
           item.rate = batch_to_use.batch_price;
-        } else if (update) {
+        }  if (update) {
           item.batch_price = null;
           this.update_item_detail(item);
         }

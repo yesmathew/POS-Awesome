@@ -540,6 +540,8 @@ export default {
                 return found;
               });
             }
+
+
             if (
               filtred_list.length == 0 &&
               this.pos_profile.posa_search_batch_no
@@ -548,15 +550,39 @@ export default {
                 let found = false;
                 for (let element of item.batch_no_data) {
                   if (element.batch_no == this.search) {
+                    item.batch_no=this.search
                     found = true;
                     this.flags.batch_no = null;
                     this.flags.batch_no = this.search;
                     break;
                   }
                 }
+
+                if (
+                    item.batch_no != null &&
+                    this.pos_profile.warehouse != null
+                  ) {
+                    frappe.db
+                      .get_value("Batch", item.batch_no, [
+                        "posa_batch_price",
+                        "batch_qty",
+                      ])
+                      .then((r) => {
+                        console.log(r.message,"dT bCK");
+                        item.acutal_qty = r.message.batch_qty;
+                        item.rate = r.message.posa_batch_price;
+                      });
+                  }
+
+
+
+
+
                 return found;
               });
             }
+
+
           }
         }
         if (

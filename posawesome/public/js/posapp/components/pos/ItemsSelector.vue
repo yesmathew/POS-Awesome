@@ -569,7 +569,7 @@ export default {
                       ])
                       .then((r) => {
                         console.log(r.message,"dT bCK");
-                        item.acutal_qty = r.message.batch_qty;
+                        item.actual_qty = r.message.batch_qty;
                         item.rate = r.message.posa_batch_price;
                       });
                   }

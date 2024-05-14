@@ -288,7 +288,21 @@ export default {
       if (this.flags.serial_no) {
         new_item.to_set_serial_no = this.flags.serial_no;
       }
-      if (
+
+       element = this.search.toLowerCase().trim();
+   console.log(element,"this element");
+                   let elements_regex = new RegExp( `.*${element.split("").join(".*")}.*`   );
+                  if (elements_regex.test(new_item.item_name.toLowerCase())) {
+                    match = true;
+                    const sortedBatches = new_item.batch_no_data.sort((a, b) => {
+  return new Date(a.manufacturing_date) - new Date(b.manufacturing_date);
+});
+if (sortedBatches.length > 0) {
+  const oldestBatch = sortedBatches[0];
+  new_item["to_set_batch_no"] = oldestBatch.batch_no;
+  new_item.batch_no = oldestBatch.batch_no;
+}}
+      else if (
         !new_item.to_set_batch_no &&
         new_item.has_batch_no &&
         this.pos_profile.posa_search_batch_no
@@ -304,6 +318,17 @@ export default {
       if (this.flags.batch_no) {
         new_item.to_set_batch_no = this.flags.batch_no;
       }
+      if (new_item.has_serial_no &&  !new_item.to_set_serial_no){
+
+evntBus.$emit("show_mesage", {
+        text: __(`This item has {0} serial no`, [
+        new_item.item_name
+        ]),
+        color: "error",
+        
+      });
+      return
+}
       if (match) {
         this.add_item(new_item);
         this.search = null;

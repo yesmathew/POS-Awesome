@@ -966,11 +966,14 @@ export default {
       frappe.db.get_value("Batch", selectedBatchNo , ["posa_batch_price","batch_qty","manufacturing_date","stock_uom"]).then(r=>{
 
         let value=r.message
-        item.rate=value.posa_batch_price
-item.actual_batch_qty=value.batch_qty
-item.batch_no=selectedBatchNo
-item.batch_price=value.posa_batch_price
-item.stock_uom=value.stock_uom
+        let discount_amount=(value.posa_batch_price*item.discount_percentage)/100
+        item.rate=value.posa_batch_price-discount_amount
+        item.actual_batch_qty=value.batch_qty
+        item.batch_no=selectedBatchNo
+        item.batch_price=value.posa_batch_price
+        item.stock_uom=value.stock_uom
+        item.price_list_rate=value.posa_batch_price
+        item.discount_amount=discount_amount
       })
 
     },

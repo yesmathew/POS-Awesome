@@ -523,17 +523,37 @@
                     v-if="item.has_batch_no == 1 || item.batch_no"
                   >
 
-                  <v-text-field
-                        dense
-                        outlined
-                        color="primary"
-                        :label="frappe._('Batch No')"
-                        background-color="white"
-                        hide-details
-                        v-model="item.batch_no"
-                        type="text"
-                        disabled
-                      ></v-text-field>
+                  <template v-if="!item.to_set_batch_no || item.to_set_batch_no === ''">
+    <!-- Render v-text-field if to_set_batch_no is not set or empty -->
+    <v-text-field
+      dense
+      outlined
+      color="primary"
+      :label="frappe._('Batch No')"
+      background-color="white"
+      hide-details
+      v-model="item.batch_no"
+      type="text"
+      disabled
+    ></v-text-field>
+  </template>
+
+  <template v-else>
+    <!-- Render v-select if to_set_batch_no is set -->
+    <v-select
+      dense
+      outlined
+      color="primary"
+      :label="frappe._('Batch No')"
+      background-color="white"
+      hide-details
+      v-model="item.to_set_batch_no"
+      :items="item.batch_no_data.map(batch => batch.batch_no)"
+      item-text="batch_no"
+      item-value="batch_no"
+      @change="updateBatchDetails(item.to_set_batch_no,item)" 
+    ></v-select>
+</template>
                     </v-col>
 
 
@@ -938,6 +958,24 @@ export default {
       if (idx >= 0) {
         this.expanded.splice(idx, 1);
       }
+    },
+
+    updateBatchDetails(selectedBatchNo,item) {
+      // Assuming you have a 'price' and 'quantity' property in your batch data
+
+      frappe.db.get_value("Batch", selectedBatchNo , ["posa_batch_price","batch_qty","manufacturing_date","stock_uom"]).then(r=>{
+
+        let value=r.message
+        let discount_amount=(value.posa_batch_price*item.discount_percentage)/100
+        item.rate=value.posa_batch_price-discount_amount
+        item.actual_batch_qty=value.batch_qty
+        item.batch_no=selectedBatchNo
+        item.batch_price=value.posa_batch_price
+        item.stock_uom=value.stock_uom
+        item.price_list_rate=value.posa_batch_price
+        item.discount_amount=discount_amount
+      })
+
     },
 
     add_one(item) {

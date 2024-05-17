@@ -329,6 +329,24 @@ evntBus.$emit("show_mesage", {
       });
       return
 }
+
+    if ( new_item.to_set_serial_no){            
+    frappe.call({
+            method: 'posawesome.posawesome.api.posapp.custom_api',
+            args: {
+              serial_no:new_item.to_set_serial_no
+            },
+            async: false, // Make it asynchronous
+            callback: function (r) {// Use arrow function to maintain this context
+              if (r.message) {
+                console.log(r.message,"--------------------------------");
+                new_item["batch_no"] = r.message.name;
+                new_item["actual_qty"]=r.message.batch_qty,
+                new_item.rate=r.message.posa_batch_price
+              }
+            }
+          });
+        }
       if (match) {
         this.add_item(new_item);
         this.search = null;
@@ -541,27 +559,27 @@ evntBus.$emit("show_mesage", {
                     break;
                   }
                 }
-                if (this.search) {
-                  frappe.db
-                    .get_value("Serial No", this.search, "batch_no")
-                    .then((r) => {
-                      item["batch_no"] = r.message.batch_no;
-                    });
-                  if (
-                    item.batch_no != null &&
-                    this.pos_profile.warehouse != null
-                  ) {
-                    frappe.db
-                      .get_value("Batch", item.batch_no, [
-                        "posa_batch_price",
-                        "batch_qty",
-                      ])
-                      .then((r) => {
-                        item["actual_qty"] = r.message.batch_qty;
-                        item.rate = r.message.posa_batch_price;
-                      });
-                  }
-                }
+                // if (this.search) {
+                //   frappe.db
+                //     .get_value("Serial No", this.search, "batch_no")
+                //     .then((r) => {
+                //       item["batch_no"] = r.message.batch_no;
+                //     });
+                //   if (
+                //     item.batch_no != null &&
+                //     this.pos_profile.warehouse != null
+                //   ) {
+                //     frappe.db
+                //       .get_value("Batch", item.batch_no, [
+                //         "posa_batch_price",
+                //         "batch_qty",
+                //       ])
+                //       .then((r) => {
+                //         item["actual_qty"] = r.message.batch_qty;
+                //         item.rate = r.message.posa_batch_price;
+                //       });
+                //   }
+                // }
                 return found;
               });
             }
@@ -583,31 +601,24 @@ evntBus.$emit("show_mesage", {
                   }
                 }
 
-                if (
-                    item.batch_no != null &&
-                    this.pos_profile.warehouse != null
-                  ) {
-                    frappe.db
-                      .get_value("Batch", item.batch_no, [
-                        "posa_batch_price",
-                        "batch_qty",
-                      ])
-                      .then((r) => {
-                        console.log(r.message,"dT bCK");
-                        item.actual_qty = r.message.batch_qty;
-                        item.rate = r.message.posa_batch_price;
-                      });
-                  }
-
-
-
-
-
+                // if (
+                //     item.batch_no != null &&
+                //     this.pos_profile.warehouse != null
+                //   ) {
+                //     frappe.db
+                //       .get_value("Batch", item.batch_no, [
+                //         "posa_batch_price",
+                //         "batch_qty",
+                //       ])
+                //       .then((r) => {
+                //         console.log(r.message,"dT bCK");
+                //         item.actual_qty = r.message.batch_qty;
+                //         item.rate = r.message.posa_batch_price;
+                //       });
+                //   }
                 return found;
               });
             }
-
-
           }
         }
         if (

@@ -1748,3 +1748,10 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
     return """ and (name like {item_code} or item_name like {item_code})""".format(
         item_code=frappe.db.escape("%" + item_code + "%")
     )
+
+
+@frappe.whitelist()
+def custom_api(serial_no):
+    batch=frappe.db.get_value("Serial No",serial_no,['batch_no'])
+    data=frappe.db.get_value("Batch",batch,["posa_batch_price","batch_qty",'name'],as_dict=1)
+    return data

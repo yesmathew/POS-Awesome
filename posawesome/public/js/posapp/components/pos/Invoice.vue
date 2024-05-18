@@ -524,7 +524,7 @@
                     v-if="item.has_batch_no == 1 || item.batch_no"
                   >
 
-                  <template v-if="!item.to_set_batch_no || item.to_set_batch_no === ''">
+                  <template v-if="item.has_serial_no">
     <!-- Render v-text-field if to_set_batch_no is not set or empty -->
     <v-text-field
       dense
@@ -2816,6 +2816,9 @@ export default {
     evntBus.$on("set_all_items", (data) => {
       this.allItems = data;
       this.items.forEach((item) => {
+      if (!item.has_serial_no && item.batch_no){
+        item["to_set_batch_no"]=item.batch_no
+      }
         this.update_item_detail(item);
       });
     });

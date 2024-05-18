@@ -253,7 +253,7 @@
                         ]
                       "
                       :rules="[isNumber]"
-                      :disabled="!!item.posa_is_offer || !!item.posa_is_replace"
+                      :disabled="item.uom === 'Nos' || !!item.posa_is_offer || !!item.posa_is_replace"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="4">
@@ -485,6 +485,7 @@
                       :label="frappe._('Serial No')"
                       multiple
                       @change="set_serial_no(item)"
+                      disabled
                     ></v-autocomplete>
                   </v-col>
                   <v-col
@@ -1028,7 +1029,8 @@ export default {
                   fields: [ 'serial_no'],
                   filters: {
                     status: 'Active',
-                    batch_no: new_item.batch_no
+                    batch_no: new_item.batch_no,
+                    warehouse:this.pos_profile.warehouse
                   }
                 }).then(records => {
                   new_item.serial_no_data=records

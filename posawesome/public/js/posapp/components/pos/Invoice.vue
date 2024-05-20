@@ -253,7 +253,7 @@
                         ]
                       "
                       :rules="[isNumber]"
-                      :disabled="item.uom === 'Nos' || !!item.posa_is_offer || !!item.posa_is_replace"
+                      :disabled="item.has_serial_no"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="4">

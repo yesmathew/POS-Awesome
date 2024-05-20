@@ -253,7 +253,7 @@
                         ]
                       "
                       :rules="[isNumber]"
-                      :disabled="!!item.posa_is_offer || !!item.posa_is_replace"
+                      :disabled="item.uom === 'Nos' || !!item.posa_is_offer || !!item.posa_is_replace"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="4">
@@ -485,6 +485,7 @@
                       :label="frappe._('Serial No')"
                       multiple
                       @change="set_serial_no(item)"
+                      disabled
                     ></v-autocomplete>
                   </v-col>
                   <v-col
@@ -523,7 +524,7 @@
                     v-if="item.has_batch_no == 1 || item.batch_no"
                   >
 
-                  <template v-if="!item.to_set_batch_no || item.to_set_batch_no === ''">
+                  <template v-if="item.has_serial_no">
     <!-- Render v-text-field if to_set_batch_no is not set or empty -->
     <v-text-field
       dense
@@ -1028,7 +1029,8 @@ export default {
                   fields: [ 'serial_no'],
                   filters: {
                     status: 'Active',
-                    batch_no: new_item.batch_no
+                    batch_no: new_item.batch_no,
+                    warehouse:this.pos_profile.warehouse
                   }
                 }).then(records => {
                   new_item.serial_no_data=records
@@ -2814,6 +2816,9 @@ export default {
     evntBus.$on("set_all_items", (data) => {
       this.allItems = data;
       this.items.forEach((item) => {
+      if (!item.has_serial_no && item.batch_no){
+        item["to_set_batch_no"]=item.batch_no
+      }
         this.update_item_detail(item);
       });
     });

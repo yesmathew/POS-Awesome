@@ -2880,6 +2880,28 @@ export default {
     items: {
       deep: true,
       handler(items) {
+        items.forEach((item) => {
+          if ( item.to_set_serial_no){            
+            frappe.call({
+                    method: 'posawesome.posawesome.api.posapp.custom_api',
+                    args: {
+                      serial_no:item.to_set_serial_no,
+                      warehouse:this.pos_profile.warehouse
+                    },
+                    async: false, // Make it asynchronous
+                    callback: function (r) {// Use arrow function to maintain this context
+                      if (r.message) {
+                        console.log(r.message,"ttttttttttttttt");
+                        console.log(item,"jjjjjjjjj");
+                        item.batch_no = r.message.name;
+                        item.actual_qty=r.message.batch_qty,
+                        item.rate=r.message.posa_batch_price-item.discount_amount,
+                        item.actual_batch_qty=r.message.batch_qty
+                      }
+                    }
+                  });
+                }
+      });
         this.handelOffers();
         this.$forceUpdate();
       },

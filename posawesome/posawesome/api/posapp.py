@@ -1751,7 +1751,9 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
 
 
 @frappe.whitelist()
-def custom_api(serial_no):
+def custom_api(serial_no,warehouse):
     batch=frappe.db.get_value("Serial No",serial_no,['batch_no'])
-    data=frappe.db.get_value("Batch",batch,["posa_batch_price","batch_qty",'name'],as_dict=1)
+    batch_qty=frappe.db.count('Serial No', {'status': 'Active','batch_no': batch,"warehouse":warehouse})
+    data=frappe.db.get_value("Batch",batch,["posa_batch_price",'name'],as_dict=1)
+    data["batch_qty"]=batch_qty
     return data

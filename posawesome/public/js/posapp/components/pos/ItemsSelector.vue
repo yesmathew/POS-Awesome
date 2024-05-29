@@ -334,7 +334,8 @@ evntBus.$emit("show_mesage", {
     frappe.call({
             method: 'posawesome.posawesome.api.posapp.custom_api',
             args: {
-              serial_no:new_item.to_set_serial_no
+              serial_no:new_item.to_set_serial_no,
+              warehouse:this.pos_profile.warehouse
             },
             async: false, // Make it asynchronous
             callback: function (r) {// Use arrow function to maintain this context

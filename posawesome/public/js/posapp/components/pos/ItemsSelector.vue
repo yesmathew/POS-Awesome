@@ -337,7 +337,7 @@ evntBus.$emit("show_mesage", {
               serial_no:new_item.to_set_serial_no,
               warehouse:this.pos_profile.warehouse
             },
-            async: false, // Make it asynchronous
+            async: false, 
             callback: function (r) {// Use arrow function to maintain this context
               if (r.message) {
                 console.log(r.message,"--------------------------------");

@@ -54,7 +54,7 @@
                   <template v-slot:item.actual_qty="{ item }">
                     <span class="golden--text">{{
                       formtFloat(item.actual_qty)
-                      }}</span>
+                    }}</span>
                   </template>
                 </v-data-table>
               </template>
@@ -289,19 +289,20 @@ export default {
         new_item.to_set_serial_no = this.flags.serial_no;
       }
 
-       element = this.search.toLowerCase().trim();
-   console.log(element,"this element");
-                   let elements_regex = new RegExp( `.*${element.split("").join(".*")}.*`   );
-                  if (elements_regex.test(new_item.item_name.toLowerCase())) {
-                    match = true;
-                    const sortedBatches = new_item.batch_no_data.sort((a, b) => {
-  return new Date(a.manufacturing_date) - new Date(b.manufacturing_date);
-});
-if (sortedBatches.length > 0) {
-  const oldestBatch = sortedBatches[0];
-  new_item["to_set_batch_no"] = oldestBatch.batch_no;
-  new_item.batch_no = oldestBatch.batch_no;
-}}
+      element = this.search.toLowerCase().trim();
+      console.log(element, "this element");
+      let elements_regex = new RegExp(`.*${element.split("").join(".*")}.*`);
+      if (elements_regex.test(new_item.item_name.toLowerCase())) {
+        match = true;
+        const sortedBatches = new_item.batch_no_data.sort((a, b) => {
+          return new Date(a.manufacturing_date) - new Date(b.manufacturing_date);
+        });
+        if (sortedBatches.length > 0) {
+          const oldestBatch = sortedBatches[0];
+          new_item["to_set_batch_no"] = oldestBatch.batch_no;
+          new_item.batch_no = oldestBatch.batch_no;
+        }
+      }
       else if (
         !new_item.to_set_batch_no &&
         new_item.has_batch_no &&
@@ -318,36 +319,35 @@ if (sortedBatches.length > 0) {
       if (this.flags.batch_no) {
         new_item.to_set_batch_no = this.flags.batch_no;
       }
-      if (new_item.has_serial_no &&  !new_item.to_set_serial_no){
+      if (new_item.has_serial_no && !new_item.to_set_serial_no) {
 
-evntBus.$emit("show_mesage", {
-        text: __(`This item has {0} serial no`, [
-        new_item.item_name
-        ]),
-        color: "error",
-        
-      });
-      return
-}
+        evntBus.$emit("show_mesage", {
+          text: __(`This item has {0} serial no`, [
+            new_item.item_name
+          ]),
+          color: "error",
 
-    if ( new_item.to_set_serial_no){            
-    frappe.call({
-            method: 'posawesome.posawesome.api.posapp.custom_api',
-            args: {
-              serial_no:new_item.to_set_serial_no,
-              warehouse:this.pos_profile.warehouse
-            },
-            async: false, 
-            callback: function (r) {// Use arrow function to maintain this context
-              if (r.message) {
-                console.log(r.message,"--------------------------------");
-                new_item["batch_no"] = r.message.name;
-                new_item["actual_qty"]=r.message.batch_qty,
-                new_item.rate=r.message.posa_batch_price
-              }
+        });
+        return
+      }
+
+      if (new_item.to_set_serial_no) {
+        frappe.call({
+          method: 'posawesome.posawesome.api.posapp.serial_custom_api',
+          args: {
+            serial_no: new_item.to_set_serial_no,
+            warehouse: this.pos_profile.warehouse
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+              new_item["batch_no"] = r.message.name;
+              new_item["actual_qty"] = r.message.batch_qty,
+              new_item.rate = r.message.posa_batch_price
             }
-          });
-        }
+          }
+        });
+      }
       if (match) {
         this.add_item(new_item);
         this.search = null;
@@ -557,30 +557,23 @@ evntBus.$emit("show_mesage", {
                     found = true;
                     this.flags.serial_no = null;
                     this.flags.serial_no = this.search;
+                    frappe.call({
+                      method: 'posawesome.posawesome.api.posapp.serial_custom_api',
+                      args: {
+                        serial_no: this.search,
+                        warehouse: this.pos_profile.warehouse
+                      },
+                      async: false,
+                      callback: function (r) {
+                        if (r.message) {
+                          item.actual_qty = r.message.batch_qty
+                          item.rate = r.message.posa_batch_price
+                        }
+                      }
+                    });
                     break;
                   }
                 }
-                // if (this.search) {
-                //   frappe.db
-                //     .get_value("Serial No", this.search, "batch_no")
-                //     .then((r) => {
-                //       item["batch_no"] = r.message.batch_no;
-                //     });
-                //   if (
-                //     item.batch_no != null &&
-                //     this.pos_profile.warehouse != null
-                //   ) {
-                //     frappe.db
-                //       .get_value("Batch", item.batch_no, [
-                //         "posa_batch_price",
-                //         "batch_qty",
-                //       ])
-                //       .then((r) => {
-                //         item["actual_qty"] = r.message.batch_qty;
-                //         item.rate = r.message.posa_batch_price;
-                //       });
-                //   }
-                // }
                 return found;
               });
             }
@@ -594,29 +587,27 @@ evntBus.$emit("show_mesage", {
                 let found = false;
                 for (let element of item.batch_no_data) {
                   if (element.batch_no == this.search) {
-                    item.batch_no=this.search
+                    item.batch_no = this.search
                     found = true;
                     this.flags.batch_no = null;
                     this.flags.batch_no = this.search;
+                    frappe.call({
+                      method: 'posawesome.posawesome.api.posapp.batch_custom_api',
+                      args: {
+                        batch_no: this.search,
+                        warehouse: this.pos_profile.warehouse
+                      },
+                      async: false,
+                      callback: function (r) {
+                        if (r.message) {
+                          item.actual_qty = r.message.batch_qty
+                          item.rate = r.message.posa_batch_price
+                        }
+                      }
+                    });
                     break;
                   }
                 }
-
-                // if (
-                //     item.batch_no != null &&
-                //     this.pos_profile.warehouse != null
-                //   ) {
-                //     frappe.db
-                //       .get_value("Batch", item.batch_no, [
-                //         "posa_batch_price",
-                //         "batch_qty",
-                //       ])
-                //       .then((r) => {
-                //         console.log(r.message,"dT bCK");
-                //         item.actual_qty = r.message.batch_qty;
-                //         item.rate = r.message.posa_batch_price;
-                //       });
-                //   }
                 return found;
               });
             }

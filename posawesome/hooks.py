@@ -94,9 +94,7 @@ doctype_js = {
 doc_events = {
     "Sales Invoice": {
         "validate": "posawesome.posawesome.api.invoice.validate",
-        "before_submit": ["posawesome.posawesome.api.invoice.before_submit",
-                          "posawesome.posawesome.api.invoice.custom_generate_barcode",
-                          ],
+        "before_submit": "posawesome.posawesome.api.invoice.before_submit",
         "before_cancel": "posawesome.posawesome.api.invoice.before_cancel",
     },
     "Customer": {

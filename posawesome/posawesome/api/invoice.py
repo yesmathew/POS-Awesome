@@ -246,31 +246,31 @@ def calc_delivery_charges(doc):
     if calculate_taxes_and_totals:
         doc.calculate_taxes_and_totals()
 
-def custom_generate_barcode(doc, method):
-    # Your data to encode in the barcode
-    data = doc.name
+# def custom_generate_barcode(doc, method):
+#     # Your data to encode in the barcode
+#     data = doc.name
 
-    # Generate a Code 128 barcode
-    code128 = barcode.get_barcode_class('code128')
+#     # Generate a Code 128 barcode
+#     code128 = barcode.get_barcode_class('code128')
 
-    # Create the barcode instance
-    barcode_instance = code128(data, writer=SVGWriter())
+#     # Create the barcode instance
+#     barcode_instance = code128(data, writer=SVGWriter())
 
-    # Create an in-memory stream to hold the SVG data
-    svg_stream = BytesIO()
+#     # Create an in-memory stream to hold the SVG data
+#     svg_stream = BytesIO()
 
-    # Write the SVG data to the in-memory stream
-    barcode_instance.write(svg_stream)
+#     # Write the SVG data to the in-memory stream
+#     barcode_instance.write(svg_stream)
 
-    # Seek to the beginning of the stream
-    svg_stream.seek(0)
+#     # Seek to the beginning of the stream
+#     svg_stream.seek(0)
 
-    # Read the SVG data from the stream
-    svg_data = svg_stream.read().decode('utf-8')
+#     # Read the SVG data from the stream
+#     svg_data = svg_stream.read().decode('utf-8')
 
-    # Encode the SVG data as base64
-    base64_svg_data = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
+#     # Encode the SVG data as base64
+#     base64_svg_data = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
 
-    # Construct the data URI
-    data_uri = f'data:image/svg+xml;base64,{base64_svg_data}'
-    doc.set("custom_barcode_data",  data_uri)
+#     # Construct the data URI
+#     data_uri = f'data:image/svg+xml;base64,{base64_svg_data}'
+#     doc.set("custom_barcode_data",  data_uri)

@@ -182,7 +182,7 @@ export default {
       win.focus();
     },
     close_shift_dialog() {
-      evntBus.$emit('open_closing_dialog');
+    evntBus.$emit('open_closing_dialog');
     },
     show_mesage(data) {
       this.snack = true;

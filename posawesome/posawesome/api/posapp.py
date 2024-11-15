@@ -838,10 +838,13 @@ def get_available_credit(customer, company):
 
 @frappe.whitelist()
 def get_draft_invoices(pos_opening_shift):
+    pos_profile = frappe.get_cached_value(
+        "POS Opening Shift", pos_opening_shift, "pos_profile"
+    )
     invoices_list = frappe.get_list(
         "Sales Invoice",
         filters={
-            "posa_pos_opening_shift": pos_opening_shift,
+            "pos_profile": pos_profile,
             "docstatus": 0,
             "posa_is_printed": 0,
         },
@@ -1747,7 +1750,6 @@ def get_seearch_items_conditions(item_code, serial_no, batch_no, barcode):
     )
 
 
-
 @frappe.whitelist()
 def get_openingshift(doc,method):
     user=frappe.session.user
@@ -1776,3 +1778,17 @@ def get_openingshift(doc,method):
         else:
             frappe.throw("Create an Open Shift in Pos")
     return 
+
+@frappe.whitelist()
+def serial_custom_api(serial_no,warehouse):
+    batch=frappe.db.get_value("Serial No",serial_no,['batch_no'])
+    batch_qty=frappe.db.count('Serial No', {'status': 'Active','batch_no': batch,"warehouse":warehouse})
+    data=frappe.db.get_value("Batch",batch,["posa_batch_price",'name'],as_dict=1)
+    data["batch_qty"]=batch_qty
+    return data
+
+@frappe.whitelist()
+def batch_custom_api(batch_no,warehouse):
+    data=frappe.db.get_value("Batch",batch_no,["posa_batch_price",'name'],as_dict=1)
+    data["batch_qty"]=frappe.db.count('Serial No', {'status': 'Active','batch_no': data.name,"warehouse":warehouse})
+    return data

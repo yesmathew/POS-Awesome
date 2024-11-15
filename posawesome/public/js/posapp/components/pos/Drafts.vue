@@ -101,6 +101,8 @@ export default {
       if (this.selected.length > 0) {
         evntBus.$emit('load_invoice', this.selected[0]);
         this.draftsDialog = false;
+        
+        this.selected = [];
       }
     },
   },

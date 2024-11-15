@@ -200,10 +200,6 @@ export default {
             newOffer.give_item = this.get_give_items(newOffer)[0].item_code;
           }
           this.pos_offers.push(newOffer);
-          evntBus.$emit('show_mesage', {
-            text: __('New Offer Available'),
-            color: 'warning',
-          });
         }
       });
     },

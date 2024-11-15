@@ -1793,4 +1793,4 @@ def get_openingshift(doc,method):
                 frappe.throw("The Openig shift pos in Pos and your is not matching")
         else:
             frappe.throw("Create an Open Shift in Pos")
-    return 
+    return

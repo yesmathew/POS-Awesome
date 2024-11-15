@@ -1763,3 +1763,34 @@ def batch_custom_api(batch_no,warehouse):
     data=frappe.db.get_value("Batch",batch_no,["posa_batch_price",'name'],as_dict=1)
     data["batch_qty"]=frappe.db.count('Serial No', {'status': 'Active','batch_no': data.name,"warehouse":warehouse})
     return data
+
+
+
+@frappe.whitelist()
+def get_openingshift(doc,method):
+    user=frappe.session.user
+    open_vouchers = frappe.db.get_all(
+        "POS Opening Shift",
+        filters={
+            "user": user,
+            "pos_closing_shift": ["in", ["", None]],
+            "docstatus": 1,
+            "status": "Open",
+        },
+        fields=["name", "pos_profile"],
+        order_by="period_start_date desc"
+    )
+    if  doc.pos_profile:
+        if open_vouchers and  open_vouchers[0].name  :
+            if doc.pos_profile == open_vouchers[0].pos_profile:
+                if method=='validate':
+                    doc.posa_pos_opening_shift=open_vouchers[0].name
+                else:
+                    sales_invoice = frappe.get_doc('Sales Invoice', doc.name)
+                    sales_invoice.posa_pos_opening_shift = open_vouchers[0].name
+                    sales_invoice.save(ignore_permissions=True)  
+            else:
+                frappe.throw("The Openig shift pos in Pos and your is not matching")
+        else:
+            frappe.throw("Create an Open Shift in Pos")
+    return 

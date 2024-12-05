@@ -928,6 +928,7 @@ export default {
     },
 
     show_payment() {
+      this.items.forEach((item) => {item.stock_qty=item.serial_no_selected.length})
       this.redeem_customer_credit = false;
       if (!frappe.user_roles.includes("POS Cash")) {
 

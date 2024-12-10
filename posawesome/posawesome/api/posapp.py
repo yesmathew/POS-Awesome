@@ -30,6 +30,7 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
     get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from frappe.utils.caching import redis_cache
+from erpnext.stock.utils  import scan_barcode 
 
 
 @frappe.whitelist()
@@ -1794,3 +1795,112 @@ def get_openingshift(doc,method):
         else:
             frappe.throw("Create an Open Shift in Pos")
     return
+
+
+@frappe.whitelist()
+def custom(search,pos_profile ,price_list):
+    pos_profile = json.loads(pos_profile)
+    value=scan_barcode(search)
+    today = nowdate()
+    warehouse = pos_profile.get("warehouse")
+    attributes = ""
+    batch_no_data = []
+    if value:
+        items = frappe.get_all("Item",filters={"name": value.item_code,"disabled": 0,"is_sales_item": 1,"is_fixed_asset": 0},fields=["*"])
+        item=items[0]
+        item_stock_qty=0
+        item_stock_qty = get_stock_availability(item.item_code, warehouse)
+        if pos_profile.get("posa_show_template_items") and item.has_variants:
+            attributes = get_item_attributes(item.item_code)
+        batch_list = get_batch_qty(warehouse=warehouse, item_code=item.item_code)
+        if batch_list:
+            for batch in batch_list:
+                            if batch.qty > 0 and batch.batch_no:
+                                batch_doc = frappe.get_cached_doc(
+                                    "Batch", batch.batch_no
+                                )
+                                if (
+                                    str(batch_doc.expiry_date) > str(today)
+                                    or batch_doc.expiry_date in ["", None]
+                                ) and batch_doc.disabled == 0:
+                                    batch_no_data.append(
+                                        {
+                                            "batch_no": batch.batch_no,
+                                            "batch_qty": batch.qty,
+                                            "expiry_date": batch_doc.expiry_date,
+                                            "batch_price": batch_doc.posa_batch_price,
+                                            "manufacturing_date": batch_doc.manufacturing_date,
+                                        }
+                                    )
+        
+        item_prices_data = frappe.get_all(
+                "Item Price",
+                fields=["item_code", "price_list_rate", "currency", "uom"],
+                filters={
+                    "price_list": price_list,
+                    "item_code": ["in", items],
+                    "currency": pos_profile.get("currency"),
+                    "selling": 1,
+                    "valid_from": ["<=", today],
+                },
+                or_filters=[
+                    ["valid_upto", ">=", today],
+                    ["valid_upto", "in", ["", None]],
+                ],
+                order_by="valid_from ASC, valid_upto DESC",
+            )
+        item_prices = {}
+        for d in item_prices_data:
+                item_prices.setdefault(d.item_code, {})
+                item_prices[d.item_code][d.get("uom") or "None"] = d
+        item_code = item.item_code
+        item_price = {}
+        if item_prices.get(item_code):
+            item_price = (
+                item_prices.get(item_code).get(item.stock_uom)
+                or item_prices.get(item_code).get("None")
+                or {}
+                )
+        item_attributes=''
+        if pos_profile.get("posa_show_template_items") and item.variant_of:
+                    item_attributes = frappe.get_all(
+                        "Item Variant Attribute",
+                        fields=["attribute", "attribute_value"],
+                        filters={"parent": item.item_code, "parentfield": "attributes"},
+                    )
+        
+        item_barcode = frappe.get_all(
+                    "Item Barcode",
+                    filters={"parent": item.item_code},
+                    fields=["barcode", "posa_uom"],
+                )
+        
+        uoms = frappe.get_all(
+                    "UOM Conversion Detail",
+                    filters={"parent": item.item_code},
+                    fields=["uom", "conversion_factor"],
+                )
+        
+        serial_no_data = []
+        if value.serial_no:
+            serial_no_data = frappe.get_all(
+                    "Serial No",
+                    filters={
+                        "item_code": item_code,
+                        "status": "Active",
+                        "warehouse": warehouse,
+                    },
+                    fields=["name as serial_no"],
+            )
+            
+        item.actual_qty=item_stock_qty or 0
+        item.attributes=attributes or ""
+        item.batch_no_data=batch_no_data or []
+        item.currency=item_price.get("currency")
+        item.rate =item_price.get("price_list_rate") or 0
+        item.item_attributes=item_attributes or ""
+        item.item_barcode=item_barcode or []
+        item.item_uoms=uoms or []
+        item.serial_no_data=serial_no_data or []
+
+        return item

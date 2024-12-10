@@ -260,12 +260,32 @@ export default {
       }
     },
     enter_event() {
+      const vm = this;
+      let new_item = null;
+      frappe.call({
+          method: 'posawesome.posawesome.api.posapp.custom',
+          args: {
+            search: this.first_search,
+            pos_profile: vm.pos_profile,
+            price_list: vm.customer_price_list,
+          },
+          async: false,
+          callback: function (r) {
+            if (r.message) {
+              console.log(r.message,"%%%%%%%%%%%%%%%%%%%");
+              new_item =r.message
+            }
+          }
+      });
+
+      if (!new_item) {
+        return;
+      }
       let match = false;
       if (!this.filtred_items.length || !this.first_search) {
         return;
       }
       const qty = this.get_item_qty(this.first_search);
-      const new_item = { ...this.filtred_items[0] };
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
         if (this.search == element.barcode) {

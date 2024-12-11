@@ -30,7 +30,7 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
     get_applicable_delivery_charges as _get_applicable_delivery_charges,
 )
 from frappe.utils.caching import redis_cache
-from erpnext.stock.utils  import scan_barcode 
+# from erpnext.stock.utils  import scan_barcode 
 
 
 @frappe.whitelist()
@@ -1797,110 +1797,203 @@ def get_openingshift(doc,method):
     return
 
 
+BarcodeScanResult = dict[str, str | None]
+
+def _update_item_info(scan_result: dict[str, str | None]) -> dict[str, str | None]:
+	if item_code := scan_result.get("item_code"):
+		if item_info := frappe.get_cached_value(
+			"Item",
+			item_code,
+			["has_batch_no", "has_serial_no"],
+			as_dict=True,
+		):
+			scan_result.update(item_info)
+	return scan_result
+
+
+@frappe.whitelist()
+def scan_barcode(search_value: str) -> BarcodeScanResult:
+	def set_cache(data: BarcodeScanResult):
+		frappe.cache().set_value(f"erpnext:barcode_scan:{search_value}", data, expires_in_sec=120)
+
+	def get_cache() -> BarcodeScanResult | None:
+		if data := frappe.cache().get_value(f"erpnext:barcode_scan:{search_value}"):
+			return data
+
+	if scan_data := get_cache():
+		return scan_data
+
+	# search barcode no
+	barcode_data = frappe.db.get_value(
+		"Item Barcode",
+		{"barcode": search_value},
+		["barcode", "parent as item_code", "uom"],
+		as_dict=True,
+	)
+	if barcode_data:
+		_update_item_info(barcode_data)
+		set_cache(barcode_data)
+		return barcode_data
+
+	# search serial no
+	serial_no_data = frappe.db.get_value(
+		"Serial No",
+		search_value,
+		["name as serial_no", "item_code", "batch_no"],
+		as_dict=True,
+	)
+	if serial_no_data:
+		_update_item_info(serial_no_data)
+		set_cache(serial_no_data)
+		return serial_no_data
+
+	# search batch no
+	batch_no_data = frappe.db.get_value(
+		"Batch",
+		search_value,
+		["name as batch_no", "item as item_code"],
+		as_dict=True,
+	)
+	if batch_no_data:
+		_update_item_info(batch_no_data)
+		set_cache(batch_no_data)
+		return batch_no_data
+	
+	item_name  = frappe.db.get_value(
+		"Item",
+		{"item_name": search_value},
+		["item_code",'has_serial_no','has_batch_no'],
+		as_dict=True,
+	)
+	if item_name:
+		if item_name.has_serial_no:
+			frappe.throw(
+				_(
+					"Item Name {0} is linked with Item {1} which has serial no. Please scan serial no instead."
+				).format(search_value, item_name.item_code)
+			)
+		# if item_name.has_batch_no:
+		# 	frappe.throw(
+		# 		_(
+		# 			"Item Name {0} is linked with Item {1} which has batch no. Please scan batch no instead."
+		# 		).format(search_value, item_name.item_code)
+		# 	)
+		# _update_item_info(item_name)
+		# set_cache(item_name)
+		# return item_name
+	return {}
+
+
+
 @frappe.whitelist()
 def custom(search,pos_profile ,price_list):
+    if not search:
+        return
     pos_profile = json.loads(pos_profile)
     value=scan_barcode(search)
     today = nowdate()
     warehouse = pos_profile.get("warehouse")
     attributes = ""
     batch_no_data = []
-    if value:
+    if value :
         items = frappe.get_all("Item",filters={"name": value.item_code,"disabled": 0,"is_sales_item": 1,"is_fixed_asset": 0},fields=["*"])
-        item=items[0]
-        item_stock_qty=0
-        item_stock_qty = get_stock_availability(item.item_code, warehouse)
-        if pos_profile.get("posa_show_template_items") and item.has_variants:
-            attributes = get_item_attributes(item.item_code)
-        batch_list = get_batch_qty(warehouse=warehouse, item_code=item.item_code)
-        if batch_list:
-            for batch in batch_list:
-                            if batch.qty > 0 and batch.batch_no:
-                                batch_doc = frappe.get_cached_doc(
-                                    "Batch", batch.batch_no
-                                )
-                                if (
-                                    str(batch_doc.expiry_date) > str(today)
-                                    or batch_doc.expiry_date in ["", None]
-                                ) and batch_doc.disabled == 0:
-                                    batch_no_data.append(
-                                        {
-                                            "batch_no": batch.batch_no,
-                                            "batch_qty": batch.qty,
-                                            "expiry_date": batch_doc.expiry_date,
-                                            "batch_price": batch_doc.posa_batch_price,
-                                            "manufacturing_date": batch_doc.manufacturing_date,
-                                        }
+        item=items[0] if items else None
+        if item :
+            item_stock_qty=0
+            item_stock_qty = get_stock_availability(item.item_code, warehouse)
+            if pos_profile.get("posa_show_template_items") and item.has_variants:
+                attributes = get_item_attributes(item.item_code)
+            batch_list = get_batch_qty(warehouse=warehouse, item_code=item.item_code)
+            if batch_list:
+                for batch in batch_list:
+                                if batch.qty > 0 and batch.batch_no:
+                                    batch_doc = frappe.get_cached_doc(
+                                        "Batch", batch.batch_no
                                     )
-        
-        item_prices_data = frappe.get_all(
-                "Item Price",
-                fields=["item_code", "price_list_rate", "currency", "uom"],
-                filters={
-                    "price_list": price_list,
-                    "item_code": ["in", items],
-                    "currency": pos_profile.get("currency"),
-                    "selling": 1,
-                    "valid_from": ["<=", today],
-                },
-                or_filters=[
-                    ["valid_upto", ">=", today],
-                    ["valid_upto", "in", ["", None]],
-                ],
-                order_by="valid_from ASC, valid_upto DESC",
-            )
-        item_prices = {}
-        for d in item_prices_data:
-                item_prices.setdefault(d.item_code, {})
-                item_prices[d.item_code][d.get("uom") or "None"] = d
-        item_code = item.item_code
-        item_price = {}
-        if item_prices.get(item_code):
-            item_price = (
-                item_prices.get(item_code).get(item.stock_uom)
-                or item_prices.get(item_code).get("None")
-                or {}
-                )
-        item_attributes=''
-        if pos_profile.get("posa_show_template_items") and item.variant_of:
-                    item_attributes = frappe.get_all(
-                        "Item Variant Attribute",
-                        fields=["attribute", "attribute_value"],
-                        filters={"parent": item.item_code, "parentfield": "attributes"},
-                    )
-        
-        item_barcode = frappe.get_all(
-                    "Item Barcode",
-                    filters={"parent": item.item_code},
-                    fields=["barcode", "posa_uom"],
-                )
-        
-        uoms = frappe.get_all(
-                    "UOM Conversion Detail",
-                    filters={"parent": item.item_code},
-                    fields=["uom", "conversion_factor"],
-                )
-        
-        serial_no_data = []
-        if value.serial_no:
-            serial_no_data = frappe.get_all(
-                    "Serial No",
-                    filters={
-                        "item_code": item_code,
-                        "status": "Active",
-                        "warehouse": warehouse,
-                    },
-                    fields=["name as serial_no"],
-            )
+                                    if (
+                                        str(batch_doc.expiry_date) > str(today)
+                                        or batch_doc.expiry_date in ["", None]
+                                    ) and batch_doc.disabled == 0:
+                                        batch_no_data.append(
+                                            {
+                                                "batch_no": batch.batch_no,
+                                                "batch_qty": batch.qty,
+                                                "expiry_date": batch_doc.expiry_date,
+                                                "batch_price": batch_doc.posa_batch_price,
+                                                "manufacturing_date": batch_doc.manufacturing_date,
+                                            }
+                                        )
             
-        item.actual_qty=item_stock_qty or 0
-        item.attributes=attributes or ""
-        item.batch_no_data=batch_no_data or []
-        item.currency=item_price.get("currency")
-        item.rate =item_price.get("price_list_rate") or 0
-        item.item_attributes=item_attributes or ""
-        item.item_barcode=item_barcode or []
-        item.item_uoms=uoms or []
-        item.serial_no_data=serial_no_data or []
+            item_prices_data = frappe.get_all(
+                    "Item Price",
+                    fields=["item_code", "price_list_rate", "currency", "uom"],
+                    filters={
+                        "price_list": price_list,
+                        "item_code": ["in", items],
+                        "currency": pos_profile.get("currency"),
+                        "selling": 1,
+                        "valid_from": ["<=", today],
+                    },
+                    or_filters=[
+                        ["valid_upto", ">=", today],
+                        ["valid_upto", "in", ["", None]],
+                    ],
+                    order_by="valid_from ASC, valid_upto DESC",
+                )
+            item_prices = {}
+            for d in item_prices_data:
+                    item_prices.setdefault(d.item_code, {})
+                    item_prices[d.item_code][d.get("uom") or "None"] = d
+            item_code = item.item_code
+            item_price = {}
+            if item_prices.get(item_code):
+                item_price = (
+                    item_prices.get(item_code).get(item.stock_uom)
+                    or item_prices.get(item_code).get("None")
+                    or {}
+                    )
+            item_attributes=''
+            if pos_profile.get("posa_show_template_items") and item.variant_of:
+                        item_attributes = frappe.get_all(
+                            "Item Variant Attribute",
+                            fields=["attribute", "attribute_value"],
+                            filters={"parent": item.item_code, "parentfield": "attributes"},
+                        )
+            
+            item_barcode = frappe.get_all(
+                        "Item Barcode",
+                        filters={"parent": item.item_code},
+                        fields=["barcode", "posa_uom"],
+                    )
+            
+            uoms = frappe.get_all(
+                        "UOM Conversion Detail",
+                        filters={"parent": item.item_code},
+                        fields=["uom", "conversion_factor"],
+                    )
+            
+            serial_no_data = []
+            if value.serial_no:
+                serial_no_data = frappe.get_all(
+                        "Serial No",
+                        filters={
+                            "item_code": item_code,
+                            "status": "Active",
+                            "warehouse": warehouse,
+                        },
+                        fields=["name as serial_no"],
+                )
+                
+            item.actual_qty=item_stock_qty or 0
+            item.attributes=attributes or ""
+            item.batch_no_data=batch_no_data or []
+            item.currency=item_price.get("currency")
+            item.rate =item_price.get("price_list_rate") or 0
+            item.item_attributes=item_attributes or ""
+            item.item_barcode=item_barcode or []
+            item.item_uoms=uoms or []
+            item.serial_no_data=serial_no_data or []
 
-        return item
+            return item
+        
+    return

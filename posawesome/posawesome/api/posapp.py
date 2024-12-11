@@ -1862,7 +1862,7 @@ def scan_barcode(search_value: str) -> BarcodeScanResult:
 	item_name  = frappe.db.get_value(
 		"Item",
 		{"item_name": search_value},
-		["item_code",'has_serial_no','has_batch_no'],
+		["name as item_code",'has_serial_no','has_batch_no'],
 		as_dict=True,
 	)
 	if item_name:
@@ -1878,9 +1878,9 @@ def scan_barcode(search_value: str) -> BarcodeScanResult:
 		# 			"Item Name {0} is linked with Item {1} which has batch no. Please scan batch no instead."
 		# 		).format(search_value, item_name.item_code)
 		# 	)
-		# _update_item_info(item_name)
-		# set_cache(item_name)
-		# return item_name
+		_update_item_info(item_name)
+		set_cache(item_name)
+		return item_name
 	return {}
 
 

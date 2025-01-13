@@ -282,9 +282,9 @@ export default {
         return;
       }
       let match = false;
-      if (!this.filtred_items.length || !this.first_search) {
-        return;
-      }
+      // if (!this.filtred_items.length || !this.first_search) {
+      //   return;
+      // }
       const qty = this.get_item_qty(this.first_search);
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
@@ -469,18 +469,9 @@ export default {
         },
       });
     },
+    
     trigger_onscan(sCode) {
-      if (this.filtred_items.length == 0) {
-        evntBus.$emit("show_mesage", {
-          text: `No Item has this barcode "${sCode}"`,
-          color: "error",
-        });
-        frappe.utils.play_sound("error");
-      } else {
-        this.enter_event();
-        this.debounce_search = null;
-        this.search = null;
-      }
+     this.enter_event();
     },
     generateWordCombinations(inputString) {
       const words = inputString.split(" ");

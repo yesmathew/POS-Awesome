@@ -606,6 +606,7 @@
               :filter="salesPersonFilter"
               :disabled="readonly"
             >
+
               <template v-slot:item="data">
                 <template>
                   <v-list-item-content>
@@ -623,6 +624,45 @@
             </v-autocomplete>
           </v-col>
         </v-row>
+
+ <!-- updated            -->
+
+      <v-row class="pb-0 mb-2" align="start">
+        <v-col cols="12">
+          <v-autocomplete
+            dense
+            clearable
+            auto-select-first
+            outlined
+            color="primary"
+            :label="frappe._('Sales Partner')"
+            v-model="sales_partner"
+            :items="sales_partners"
+            item-text="partner_name"
+            item-value="name"
+            background-color="white"
+            :no-data-text="__('Sales Partner not found')"
+            hide-details
+            :filter="salesPartnerFilter"
+            :disabled="readonly"
+          >
+            <template v-slot:item="data">
+              <template>
+                <v-list-item-content>
+                  <v-list-item-title
+                    class="primary--text subtitle-1"
+                    v-html="data.item.partner_name"
+                  ></v-list-item-title>
+                  <v-list-item-subtitle
+                    v-if="data.item.commission_rate"
+                    v-html="`${__('Commission')}: ${data.item.commission_rate}%`"
+                  ></v-list-item-subtitle>
+                </v-list-item-content>
+              </template>
+            </template>
+          </v-autocomplete>
+        </v-col>
+      </v-row>
       </div>
     </v-card>
 
@@ -717,6 +757,8 @@ export default {
     addresses: [],
     sales_persons: [],
     sales_person: "",
+    sales_partners: [],
+    sales_partner: "",
     paid_change: 0,
     order_delivery_date: false,
     paid_change_rules: [],
@@ -879,6 +921,8 @@ export default {
       data["redeemed_customer_credit"] = this.redeemed_customer_credit;
       data["customer_credit_dict"] = this.customer_credit_dict;
       data["is_cashback"] = this.is_cashback;
+      data["sales_partner"] = this.sales_partner;
+      this.invoice_doc["sales_partner"]=this.sales_partner;
 
       const vm = this;
       frappe.call({
@@ -923,6 +967,50 @@ export default {
         }
       });
     },
+
+
+
+
+
+
+    // sales partner implimentation
+    get_sales_partner_names() {
+    const vm = this;
+    frappe.call({
+      method: "frappe.client.get_list",
+      args: {
+        doctype: "Sales Partner",
+        fields: ["name", "partner_name", "commission_rate"],
+        limit_page_length: 0
+      },
+      callback: function(r) {
+        console.log(r,"this is return sales partnerssssssss")
+        vm.sales_partners = r.message;
+      }
+    });
+  },
+
+
+  salesPartnerFilter(item, queryText, itemText) {
+    const textOne = item.partner_name ? item.partner_name.toLowerCase() : "";
+    const textTwo = item.name.toLowerCase();
+    const searchText = queryText.toLowerCase();
+    return (
+      textOne.indexOf(searchText) > -1 || 
+      textTwo.indexOf(searchText) > -1
+    );
+  },
+
+
+
+
+
+
+
+
+
+
+
     clear_all_amounts() {
       this.invoice_doc.payments.forEach((payment) => {
         payment.amount = 0;
@@ -1400,6 +1488,8 @@ export default {
         this.loyalty_amount = 0;
         this.get_addresses();
         this.get_sales_person_names();
+// updated
+        this.get_sales_partner_names();
       });
       evntBus.$on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;

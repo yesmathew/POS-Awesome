@@ -894,6 +894,8 @@ export default {
       this.redeem_customer_credit = false;
       this.is_cashback = true;
       this.sales_person = "";
+      // this.sales_partner = "";
+
 
       evntBus.$emit("new_invoice", "false");
       this.back_to_invoice();
@@ -980,7 +982,7 @@ export default {
       method: "frappe.client.get_list",
       args: {
         doctype: "Sales Partner",
-        fields: ["name", "partner_name", "commission_rate"],
+        fields: ["name", "partner_name"],
         limit_page_length: 0
       },
       callback: function(r) {

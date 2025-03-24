@@ -137,7 +137,6 @@ export default {
           if (r.message) {
             evntBus.$emit('open_ClosingDialog', r.message);
           } else {
-            // console.log(r);
           }
         });
     },
@@ -157,7 +156,6 @@ export default {
             });
             this.check_opening_entry();
           } else {
-            console.log(r);
           }
         });
     },

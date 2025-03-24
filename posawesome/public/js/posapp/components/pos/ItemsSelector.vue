@@ -199,7 +199,6 @@ export default {
     },
     get_items_groups() {
       if (!this.pos_profile) {
-        console.log("No POS Profile");
         return;
       }
       if (this.pos_profile.item_groups.length > 0) {
@@ -272,7 +271,6 @@ export default {
           async: false,
           callback: function (r) {
             if (r.message) {
-              console.log(r.message,"%%%%%%%%%%%%%%%%%%%");
               new_item =r.message
             }
           }
@@ -310,7 +308,6 @@ export default {
       }
 
       element = this.search.toLowerCase().trim();
-      console.log(element, "this element");
       let elements_regex = new RegExp(`.*${element.split("").join(".*")}.*`);
       if (elements_regex.test(new_item.item_name.toLowerCase())) {
         match = true;

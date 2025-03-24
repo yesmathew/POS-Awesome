@@ -986,7 +986,6 @@ export default {
         limit_page_length: 0
       },
       callback: function(r) {
-        console.log(r,"this is return sales partnerssssssss")
         vm.sales_partners = r.message;
       }
     });

@@ -199,7 +199,6 @@ export default {
     },
     get_items_groups() {
       if (!this.pos_profile) {
-        console.log("No POS Profile");
         return;
       }
       if (this.pos_profile.item_groups.length > 0) {
@@ -272,7 +271,6 @@ export default {
           async: false,
           callback: function (r) {
             if (r.message) {
-              console.log(r.message,"%%%%%%%%%%%%%%%%%%%");
               new_item =r.message
             }
           }
@@ -282,9 +280,9 @@ export default {
         return;
       }
       let match = false;
-      if (!this.filtred_items.length || !this.first_search) {
-        return;
-      }
+      // if (!this.filtred_items.length || !this.first_search) {
+      //   return;
+      // }
       const qty = this.get_item_qty(this.first_search);
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
@@ -310,7 +308,6 @@ export default {
       }
 
       element = this.search.toLowerCase().trim();
-      console.log(element, "this element");
       let elements_regex = new RegExp(`.*${element.split("").join(".*")}.*`);
       if (elements_regex.test(new_item.item_name.toLowerCase())) {
         match = true;
@@ -469,18 +466,9 @@ export default {
         },
       });
     },
+    
     trigger_onscan(sCode) {
-      if (this.filtred_items.length == 0) {
-        evntBus.$emit("show_mesage", {
-          text: `No Item has this barcode "${sCode}"`,
-          color: "error",
-        });
-        frappe.utils.play_sound("error");
-      } else {
-        this.enter_event();
-        this.debounce_search = null;
-        this.search = null;
-      }
+     this.enter_event();
     },
     generateWordCombinations(inputString) {
       const words = inputString.split(" ");

@@ -20,12 +20,14 @@
                     :items-per-page="itemsPerPage"
                     hide-default-footer
                   >
-                    <template v-slot:item.closing_amount="props">
+                    <template v-slot:item.closing_amount="props" >
                       <v-edit-dialog
-                        :return-value.sync="props.item.closing_amount"
-                      >
-                        {{ currencySymbol(pos_profile.currency) }}
-                        {{ formtCurrency(props.item.closing_amount) }}
+                 
+                      
+                      :return-value.sync="props.item.closing_amount"
+  >
+        {{ formtCurrency(props.item.closing_amount) }}
+        {{ currencySymbol(pos_profile.currency) }}
                         <template v-slot:input>
                           <v-text-field
                             v-model="props.item.closing_amount"
@@ -33,12 +35,17 @@
                             :label="frappe._('Edit')"
                             single-line
                             counter
+                            :disabled="props.item.mode_of_payment === 'Total'"
                             type="number"
+                            @change="addTotalRow"
                           ></v-text-field>
                         </template>
                       </v-edit-dialog>
+        <!-- v-if="props.item.mode_of_payment!= 'Total'" -->
+
                     </template>
-                    <template v-slot:item.difference="{ item }">
+
+                    <template  v-slot:item.difference="{ item }">
                       {{ currencySymbol(pos_profile.currency) }}
                       {{
                         (item.difference = formtCurrency(
@@ -54,10 +61,15 @@
                       {{ currencySymbol(pos_profile.currency) }}
                       {{ formtCurrency(item.expected_amount) }}</template
                     >
+
+                    
+                    
+                    
                   </v-data-table>
+                  
                 </template>
               </v-col>
-            </v-row>
+              </v-row>
           </v-container>
         </v-card-text>
         <v-card-actions>
@@ -109,38 +121,136 @@ export default {
   }),
   watch: {},
 
+  
   methods: {
-    close_dialog() {
+    calculateTotals() {
+
+      
+      if (!this.dialog_data.payment_reconciliation) {
+        return { totalOpening: 0, totalClosing: 0, totalExpected: 0, totalDifference: 0 };
+      }
+
+      let totalOpening = this.dialog_data.payment_reconciliation.reduce(
+        (sum, item) => sum + (parseFloat(item.opening_amount) || 0),
+        0
+      );
+      let totalClosing = this.dialog_data.payment_reconciliation.reduce(
+        (sum, item) => sum + (parseFloat(item.closing_amount) || 0),
+        0
+        
+      );
+   
+      
+      let totalExpected = this.dialog_data.payment_reconciliation.reduce(
+        (sum, item) => sum + (parseFloat(item.expected_amount) || 0),
+        0
+      );
+      let totalDifference = totalExpected - totalClosing;
+
+      return { totalOpening, totalClosing, totalExpected, totalDifference };
+    },
+
+
+    
+
+  addTotalRow() {
+  let totals = this.calculateTotals();
+
+  // Remove the "Total" row and store other rows separately
+  let filteredRows = this.dialog_data.payment_reconciliation.filter(
+    (item) => item.mode_of_payment !== "Total"
+  );
+
+  // Append the "Total" row at the end
+  filteredRows.push({
+    idx: filteredRows.length + 1,  // Ensure a proper index
+    mode_of_payment: "Total",
+    opening_amount: totals.totalOpening,
+    closing_amount: totals.totalClosing,
+    expected_amount: totals.totalExpected,
+    difference: totals.totalDifference.toFixed(2),
+    parentfield: "payment_reconciliation",
+    __islocal: 1
+  });
+
+  // Update the list while maintaining order
+  this.dialog_data.payment_reconciliation = filteredRows;
+},
+
+
+
+
+ close_dialog() {  
       this.closingDialog = false;
     },
-    submit_dialog() {
-      evntBus.$emit('submit_closing_pos', this.dialog_data);
-      this.closingDialog = false;
-    },
+    async submit_dialog() {
+  // Remove the "Total" row before submitting
+  this.dialog_data.payment_reconciliation = this.dialog_data.payment_reconciliation.filter(
+    (item) => item.mode_of_payment !== "Total"
+  );
+
+
+
+  evntBus.$emit('submit_closing_pos', this.dialog_data);  
+
+  this.closingDialog = false;
+}
   },
 
   created: function () {
     evntBus.$on('open_ClosingDialog', (data) => {
       this.closingDialog = true;
       this.dialog_data = data;
-    });
-    evntBus.$on('register_pos_profile', (data) => {
-      this.pos_profile = data.pos_profile;
-      if (!this.pos_profile.hide_expected_amount) {
-        this.headers.push({
-          text: __('Expected Amount'),
-          value: 'expected_amount',
-          align: 'end',
-          sortable: false,
-        });
-        this.headers.push({
-          text: __('Difference'),
-          value: 'difference',
-          align: 'end',
-          sortable: false,
-        });
+      if (this.dialog_data.payment_reconciliation.length) {
+        this.addTotalRow();
       }
     });
+     evntBus.$on('register_pos_profile', (data) => {
+      this.pos_profile = data.pos_profile;
+      // Reset headers to base structure first
+      this.headers = [
+        {
+          text: __('Mode of Payment'),
+          value: 'mode_of_payment',
+          align: 'start',
+          sortable: true,
+        },
+        {
+          text: __('Opening Amount'),
+          align: 'end',
+          sortable: true,
+          value: 'opening_amount',
+        },
+        {
+          text: __('Closing Amount'),
+          value: 'closing_amount',
+          align: 'end',
+          sortable: true,
+        },
+      ];
+
+      // Conditionally add extra columns
+      if (!this.pos_profile?.hide_expected_amount) {
+        this.headers.push(
+          {
+            text: __('Expected Amount'),
+            value: 'expected_amount',
+            align: 'end',
+            sortable: false,
+          },
+          {
+            text: __('Difference'),
+            value: 'difference',
+            align: 'end',
+            sortable: false,
+          }
+        );
+      }
+    });
+
+
+    
   },
 };
+
 </script>

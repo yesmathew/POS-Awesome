@@ -37,7 +37,7 @@
                             counter
                             :disabled="props.item.mode_of_payment === 'Total'"
                             type="number"
-                            @change="addTotalRow"
+                            @keypress.enter="addTotalRow"
                           ></v-text-field>
                         </template>
                       </v-edit-dialog>

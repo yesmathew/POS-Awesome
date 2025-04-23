@@ -154,19 +154,20 @@ export default {
               text: `POS Shift Closed`,
               color: 'success',
             });
-
-            load_close_print_page(r.message)
+            console.log(r.message,"jjjjjjjj");
+            
+            this.load_close_print_page(r.message)
             this.check_opening_entry();
           } else {
           }
         });
     },
     load_close_print_page(shift) {
-      const print_format = this.pos_profile.custom_close_print_format;
+      const print_format = this.pos_profile.custom_close_print_format || 'Standard';
       const letter_head = this.pos_profile.custom_close_letter_head || 0;
       const url =
         frappe.urllib.get_base_url() +
-        "/printview?doctype=POS%20Closing%20Shift=" +
+        "/printview?doctype=POS%20Closing%20Shift&name=" +
         shift +
         "&trigger_print=1" +
         "&format=" +

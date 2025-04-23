@@ -37,7 +37,7 @@
                             counter
                             :disabled="props.item.mode_of_payment === 'Total'"
                             type="number"
-                            @change="addTotalRow"
+                            @keypress.enter="addTotalRow"
                           ></v-text-field>
                         </template>
                       </v-edit-dialog>
@@ -124,46 +124,40 @@ export default {
   
   methods: {
     calculateTotals() {
+    if (!this.dialog_data.payment_reconciliation) {
+      return { totalOpening: 0, totalClosing: 0, totalExpected: 0, totalDifference: 0 };
+    }
 
-      
-      if (!this.dialog_data.payment_reconciliation) {
-        return { totalOpening: 0, totalClosing: 0, totalExpected: 0, totalDifference: 0 };
-      }
+    let filteredData = this.dialog_data.payment_reconciliation.filter(
+      (item) => item.mode_of_payment !== "Total"
+    );
 
-      let totalOpening = this.dialog_data.payment_reconciliation.reduce(
-        (sum, item) => sum + (parseFloat(item.opening_amount) || 0),
-        0
-      );
-      let totalClosing = this.dialog_data.payment_reconciliation.reduce(
-        (sum, item) => sum + (parseFloat(item.closing_amount) || 0),
-        0
-        
-      );
-   
-      
-      let totalExpected = this.dialog_data.payment_reconciliation.reduce(
-        (sum, item) => sum + (parseFloat(item.expected_amount) || 0),
-        0
-      );
-      let totalDifference = totalExpected - totalClosing;
+    let totalOpening = filteredData.reduce(
+      (sum, item) => sum + (parseFloat(item.opening_amount) || 0),
+      0
+    );
+    let totalClosing = filteredData.reduce(
+      (sum, item) => sum + (parseFloat(item.closing_amount) || 0),
+      0
+    );
+    let totalExpected = filteredData.reduce(
+      (sum, item) => sum + (parseFloat(item.expected_amount) || 0),
+      0
+    );
+    let totalDifference = totalExpected - totalClosing;
 
-      return { totalOpening, totalClosing, totalExpected, totalDifference };
-    },
-
-
+    return { totalOpening, totalClosing, totalExpected, totalDifference };
+  },
     
-
   addTotalRow() {
   let totals = this.calculateTotals();
 
-  // Remove the "Total" row and store other rows separately
   let filteredRows = this.dialog_data.payment_reconciliation.filter(
     (item) => item.mode_of_payment !== "Total"
   );
 
-  // Append the "Total" row at the end
   filteredRows.push({
-    idx: filteredRows.length + 1,  // Ensure a proper index
+    idx: filteredRows.length + 1,
     mode_of_payment: "Total",
     opening_amount: totals.totalOpening,
     closing_amount: totals.totalClosing,
@@ -173,7 +167,6 @@ export default {
     __islocal: 1
   });
 
-  // Update the list while maintaining order
   this.dialog_data.payment_reconciliation = filteredRows;
 },
 
@@ -184,7 +177,6 @@ export default {
       this.closingDialog = false;
     },
     async submit_dialog() {
-  // Remove the "Total" row before submitting
   this.dialog_data.payment_reconciliation = this.dialog_data.payment_reconciliation.filter(
     (item) => item.mode_of_payment !== "Total"
   );
@@ -207,7 +199,6 @@ export default {
     });
      evntBus.$on('register_pos_profile', (data) => {
       this.pos_profile = data.pos_profile;
-      // Reset headers to base structure first
       this.headers = [
         {
           text: __('Mode of Payment'),
@@ -229,7 +220,6 @@ export default {
         },
       ];
 
-      // Conditionally add extra columns
       if (!this.pos_profile?.hide_expected_amount) {
         this.headers.push(
           {

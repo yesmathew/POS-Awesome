@@ -69,6 +69,7 @@ def create_sales_order(doc):
         and doc.posa_delivery_date
         and not doc.update_stock
         and frappe.get_value("POS Profile", doc.pos_profile, "posa_allow_sales_order")
+        and not doc.is_return
     ):
         sales_order_doc = make_sales_order(doc.name)
         if sales_order_doc:

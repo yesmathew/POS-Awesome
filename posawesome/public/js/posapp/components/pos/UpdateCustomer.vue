@@ -41,7 +41,7 @@
                 <v-text-field
                   dense
                   color="primary"
-                  :label="frappe._('Mobile No')"
+                  :label="frappe._('Mobile No')+ ' *'"
                   background-color="white"
                   hide-details
                   v-model="mobile_no"
@@ -275,6 +275,13 @@ export default {
       if (!this.customer_name) {
         evntBus.$emit('show_mesage', {
           text: __('Customer name is required.'),
+          color: 'error',
+        });
+        return;
+      }
+      if (!this.mobile_no) {
+        evntBus.$emit('show_mesage', {
+          text: __('Customer mobile no is required.'),
           color: 'error',
         });
         return;

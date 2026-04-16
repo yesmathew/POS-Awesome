@@ -894,7 +894,7 @@ export default {
       this.redeem_customer_credit = false;
       this.is_cashback = true;
       this.sales_person = "";
-      // this.sales_partner = "";
+      this.sales_partner = "";
 
 
       evntBus.$emit("new_invoice", "false");
